@@ -1,0 +1,43 @@
+syntax= "proto3";
+
+package randomPackage;
+
+service Random{
+    rpc PingPong(PingRequest) returns (PongResponse) {};   //rpc for unary streaming
+    rpc RandomNumbers(NumberRequest) returns (stream NumberResponse) {};  //rpc for server streaming
+    rpc TodoList(stream TodoRequest) returns  (TodoResponse) {};  //rpc for client streaming
+
+}
+
+
+message PingRequest{
+    string message=1;
+
+}
+
+message PongResponse{
+    string message=1;
+
+}
+
+message NumberRequest{
+    int32 maxVal=1;
+
+}
+
+message NumberResponse{
+    int32 num=1; 
+}
+
+
+message TodoRequest{
+    string todo=1;
+    string status=2;
+
+
+}
+
+
+message TodoResponse{
+    repeated TodoRequest data=1;
+}
