@@ -4,6 +4,8 @@ import * as protoloader from "@grpc/proto-loader";
 import {ProtoGrpcType} from "./proto/random";
 import {RandomHandlers} from "./proto/randomPackage/Random"
 import { TodoResponse } from './proto/randomPackage/TodoResponse';
+import { ChatRequest } from './proto/randomPackage/ChatRequest';
+import { ChatResponse } from './proto/randomPackage/ChatResponse';
 
 
 const PORT=8082
@@ -32,7 +34,7 @@ function main(){
 
 
 const todoList:TodoResponse ={data:[]}
-
+const  callObjByUsername=new Map<string,grpc.ServerDuplexStream<ChatRequest,ChatResponse>>()
 function getServer(){
     const server=new grpc.Server()
     server.addService(randomPackage.Random.service, {
@@ -68,9 +70,49 @@ function getServer(){
             call.on("end",()=>{
                 callback(null,{data:todoList.data})
             })
-        }
-    } as RandomHandlers)
-
+        },
+        Chat: (call) => {
+            call.on("data", (req) => {
+              const username = call.metadata.get('username')[0] as string
+              const msg = req.message
+              console.log(req)
+      
+      
+              for(let [user, usersCall] of callObjByUsername) {
+                if(username !== user) {
+                  usersCall.write({
+                    username: username,
+                    message: msg
+                  })
+                }
+              }
+      
+              if (callObjByUsername.get(username) === undefined) {
+                callObjByUsername.set(username, call)
+              }
+            })
+      
+            call.on("end", () => {
+              const username = call.metadata.get('username')[0] as string
+              callObjByUsername.delete(username)
+              for(let [user, usersCall] of callObjByUsername) {
+                  usersCall.write({
+                    username: username,
+                    message: "Has Left the Chat!"
+                  })
+              }
+              console.log(`${username} is ending their chat session`)
+      
+              call.write({
+                username: "Server",
+                message: `See you later ${username}`
+              })
+      
+              call.end()
+            })  
+      
+          }
+        } as RandomHandlers)
     return server
 }
 

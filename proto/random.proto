@@ -6,6 +6,8 @@ service Random{
     rpc PingPong(PingRequest) returns (PongResponse) {};   //rpc for unary streaming
     rpc RandomNumbers(NumberRequest) returns (stream NumberResponse) {};  //rpc for server streaming
     rpc TodoList(stream TodoRequest) returns  (TodoResponse) {};  //rpc for client streaming
+    rpc Chat(stream ChatRequest) returns (stream ChatResponse) {}; //rpc for Bidirectional streaming
+
 
 }
 
@@ -40,4 +42,16 @@ message TodoRequest{
 
 message TodoResponse{
     repeated TodoRequest data=1;
+}
+
+
+message ChatRequest{
+    string message=1;
+    
+}
+
+message ChatResponse{
+    string username=1;
+    string message=2;
+    
 }

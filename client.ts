@@ -2,6 +2,8 @@ import path from 'path';
 import * as grpc from '@grpc/grpc-js';
 import * as protoloader from "@grpc/proto-loader";
 import {ProtoGrpcType} from "./proto/random";
+import readline from 'readline';
+
 
 
 const PORT=8082
@@ -26,30 +28,30 @@ client.waitForReady(deadline,(err)=>{
 })
 
 function onClientReady(){
-    //client for unary rpc
-    // client.PingPong({message:"Ping"},(err,result)=>{
-    //     if(err){
-    //         console.log(err)
-    //         return
-    //     }
+    client for unary rpc
+    client.PingPong({message:"Ping"},(err,result)=>{
+        if(err){
+            console.log(err)
+            return
+        }
 
-    //     console.log(result)
-    // })
+        console.log(result)
+    })
 
-    //client server streaming rpc
-    // const stream=client.randomNumbers({maxVal:85})
-    // stream.on("data",(chunk)=>{
-    //     console.log(chunk)
+    //client for server streaming rpc
+    const stream1=client.randomNumbers({maxVal:85})
+    stream1.on("data",(chunk)=>{
+        console.log(chunk)
 
-    // })
+    })
 
-    // stream.on("end",()=>{
-    //     console.log("Communication ended")
-    // })
+    stream1.on("end",()=>{
+        console.log("Communication ended")
+    })
 
+    
     //client for client streaming rpc
-
-    const stream=client.TodoList((err,result)=>{
+    const stream2=client.TodoList((err,result)=>{
         if(err){
             console.log(err)
         }
@@ -58,11 +60,48 @@ function onClientReady(){
 
     })
 
-    stream.write({todo:"Walk the wife",status:"Never"})
-    stream.write({todo:"Walk the Dog",status:"Pending"})
-    stream.write({todo:"Compiler Design",status:"Done"})
-    stream.write({todo:"Creating grpc",status:"Ongoing"})
-    stream.end()
+    stream2.write({todo:"Walk the wife",status:"Never"})
+    stream2.write({todo:"Walk the Dog",status:"Pending"})
+    stream2.write({todo:"Compiler Design",status:"Done"})
+    stream2.write({todo:"Creating grpc",status:"Ongoing"})
+    stream2.end()
+
+
+    //client for bidirectional streaming
+    const r1=readline.createInterface({
+        input:process.stdin,
+        output:process.stdout
+    })
+
+    const username=process.argv[2]
+    if(!username) console.error("No username ,can't join the chat"), process.exit()
+    const metadata=new grpc.Metadata()  
+    
+    metadata.set("username",username)
+    const call=client.Chat(metadata)
+
+
+    call.write({
+        message:"register"
+    })
+
+    call.on("data",(chunk)=>{
+        console.log(`${chunk.username}==> ${chunk.message}`)
+    })
+
+  
+
+    r1.on("line",(line)=>{
+        if(line=="quit"){
+            call.end()
+            return
+        }
+        else{
+            call.write({
+                message:line
+            })
+        }
+    })
 
 
 }
